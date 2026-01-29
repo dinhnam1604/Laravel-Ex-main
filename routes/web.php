@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\AgeController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -35,7 +35,7 @@ Route::prefix('product') -> group(function(){
     });
 });
 
-Route::get('/sinhvien/{name?}/{mssv?}', function($name = 'Đoàn Trung Kiên', $mssv = '024220'){
+Route::get('/sinhvien/{name?}/{mssv?}', function($name = 'Đinh Phương Nam', $mssv = '024820'){
     return view('sinhvien.info', ['name' => $name, 'mssv' => $mssv]);
 });
 
@@ -43,6 +43,16 @@ Route::get('/banco/{n?}', function(int $n = 8){
     return view('banco.table', ['n' => $n]);
 });
 
+Route::get('/age', function () {
+    return view('age');
+})->name('age');
+
+Route::post('/age', [AgeController::class, 'age'])->name('age.submit');
+
 Route::fallback(function (){
     return view('error.404');
 });
+
+Route::get('/access-denied', function () {
+    return view('access-denied');
+})->name('access.denied');
