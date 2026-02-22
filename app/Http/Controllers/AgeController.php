@@ -6,14 +6,14 @@ use Illuminate\Http\Request;
 
 class AgeController extends Controller
 {
-    public function age(Request $request)
+    public function index()
     {
-        $request->validate([
-            'age' => 'required|integer|min:0|max:150',
-        ]);
+        return view('age');
+    }
 
-        session()->put('age', $request->input('age'));
-
-        return redirect()->route('home')->with('success', 'Age verified successfully');
+    public function save(Request $request)
+    {
+        session(['age' => $request->age]);
+        return "Đã lưu tuổi vào session";
     }
 }

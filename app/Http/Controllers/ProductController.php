@@ -4,70 +4,82 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Product;
+use App\Models\Category;
 
 class ProductController extends Controller
 {
-    //
-    public function createProduct(Request $request)
+    public function index()
     {
-        // Validate the request
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
+        $products = Product::with('category')
+            ->where('is_delete', 0)
+            ->get();
+
+        return view('product.index', compact('products'));
+    }
+
+    public function create()
+    {
+        $categories = Category::where('is_delete', 0)
+            ->where('is_active', 1)
+            ->get();
+
+        return view('product.create', compact('categories'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
             'price' => 'required|numeric|min:0',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'category_id' => 'nullable|integer',
+            'category_id' => 'required|exists:categories,id'
         ]);
 
-        $product = new Product();
-        $product->name = $request->name;
-        $product->price = $request->price;
-        $product->description = $request->description;
-        $product->category_id = $request->category_id;
+        $data = $request->all();
 
-        // Handle image upload
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $imageName = time() . '_' . $image->getClientOriginalName();
-
-            // Store image in storage/app/private/product-images
-            $image->move(storage_path('app/private/product-images'), $imageName);
-
-            // Save the image URL path to database
-            $product->image = '/product/image/' . $imageName;
+            $data['image'] = $request->file('image')
+                ->store('products', 'public');
         }
 
-        $product->save();
+        Product::create($data);
 
-        return redirect('/product')->with('success', 'Product created successfully!');
+        return redirect()->route('products.index')
+            ->with('success', 'Thêm sản phẩm thành công');
     }
 
-    public function getProduct(?string $id = '123')
+    public function edit(Product $product)
     {
-        $product = Product::find($id);
-        return view('product.detail', ['product' => $product]);
+        $categories = Category::where('is_delete', 0)->get();
+
+        return view('product.edit', compact('product', 'categories'));
     }
 
-    public function listProduct()
+    public function update(Request $request, Product $product)
     {
-        $products = Product::all();
-        return view('product.list', ['products' => $products]);
-    }
+        $request->validate([
+            'name' => 'required',
+            'price' => 'required|numeric|min:0',
+            'category_id' => 'required|exists:categories,id'
+        ]);
 
-    public function editProduct($id)
-    {
-        $product = Product::find($id, );
-        return view('product.edit', ['product' => $product]);
-    }
+        $data = $request->all();
 
-    public function getProductImage($filename)
-    {
-        $path = storage_path('app/private/product-images/' . $filename);
-
-        if (!file_exists($path)) {
-            abort(404);
+        if ($request->hasFile('image')) {
+            $data['image'] = $request->file('image')
+                ->store('products', 'public');
         }
 
-        return response()->file($path);
+        $product->update($data);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Cập nhật thành công');
+    }
+
+    public function destroy(Product $product)
+    {
+        $product->update(['is_delete' => 1]);
+
+        return redirect()->route('products.index')
+            ->with('success', 'Xóa thành công');
     }
 }
